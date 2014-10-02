@@ -30,14 +30,16 @@ end
 class Multimethod
 
   attr_accessor :implementations
-  def initialize(selector, block)
+  def initialize(selector, block = proc {})
     @selector = selector
     self.implementations = []
-    if(block.is_a? Proc)
-      self.instance_eval &block
-    else
-      self.implementations = block
-    end
+    self.instance_eval &block
+  end
+
+  def self.with_implementations(selector, implementations)
+    m = Multimethod.new(selector)
+    m.implementations = implementations
+    m
   end
 
   def define_for(parameters, &implementation)
@@ -52,9 +54,7 @@ class Multimethod
   end
 
   def call(obj, *args)
-
     implementation = self.implementations.find {|impl| impl.matches(args) }
-
     if(!implementation.nil?)
       implementation.execute(obj, *args)
     else
@@ -68,7 +68,7 @@ class Multimethod
       new_implementations = multimethod.implementations + new_implementations
     end
 
-    Multimethod.new(@selector, new_implementations)
+    Multimethod.with_implementations(@selector, new_implementations)
   end
 end
 
